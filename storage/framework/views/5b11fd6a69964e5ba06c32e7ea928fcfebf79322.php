@@ -1,0 +1,86 @@
+<?php
+
+?>
+<?php $__env->startSection('meta_title', 'Elite Lima: Discover the Best Leading Modeling Agency in Peru'); ?>
+<?php $__env->startSection('meta_keywords', 'Modelling Agency in Peru, Models Agency'); ?>
+<?php $__env->startSection('meta_description', 'Elite Lima is a leading modelling agency in Peru. We manage models of all ages for advertising in newspapers, magazines, commercial, tv, events, fashion shows etc.'); ?>
+<?php $__env->startSection('content'); ?>
+    <?php
+    if(isset($settings['logo'])) {
+        $logo = $settings['logo'];
+    }else {
+        $logo = "placeholder.jpg";
+    }
+    if(isset($settings['contact_number'])) {
+        $contact_number = $settings['contact_number'];
+    }else {
+        $contact_number = "111-2222-55555";
+    }
+    if(isset($settings['facebook_page_url'])) {
+        $facebook_page_url = $settings['facebook_page_url'];
+    }else {
+        $facebook_page_url = "http://www.facebook.com/";
+    }
+    if(isset($settings['twitter_url'])) {
+        $twitter_url = $settings['twitter_url'];
+    }else {
+        $twitter_url = "http://www.twitter.com/";
+    }
+    if(isset($settings['linkedin_url'])) {
+        $linkedin_url = $settings['linkedin_url'];
+    }else {
+        $linkedin_url = "http://www.linkedin.com/";
+    }
+    if(isset($settings['contact_info'])) {
+        $contact_info = $settings['contact_info'];
+    }else {
+        $contact_info = "loading.....";
+    }
+    if(isset($settings['email'])) {
+        $email = $settings['email'];
+    }else {
+        $email = "loading.....";
+    }
+    if(isset($settings['get_in_touch'])) {
+        $get_in_touch = $settings['get_in_touch'];
+    }else {
+        $get_in_touch = "loading.....";
+    }
+    ?>
+    <div
+        class="content">
+        <div
+            class="container-fluid">
+            <div
+                class="row-fluid">
+                <div
+                    class="span12">
+                    <div
+                        class="container elements">
+                        <div
+                            class="spacer15"></div>
+                        <h1 id="elementlistline_1">Agency</h1>
+                        <table
+                            id="elementlistline_3" style="width: 100%;" border="0">
+                            <tbody>
+                            <tr>
+                                <td
+                                    style="width: 50%; text-align:justify">
+                                    <?php echo $agency->content; ?>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php $__env->stopSection(); ?>
+<?php $__env->startSection('scripts'); ?>
+    <script type="text/javascript">
+
+    </script>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('themes.main-theme.layouts.master', array_except(get_defined_vars(), array('__data', '__path')))->render(); ?>
