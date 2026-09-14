@@ -1,5 +1,17 @@
 * text=auto
-*.css linguist-vendored
+
+# These are consumed by Linux containers and shells. With `* text=auto` a
+# checkout on Windows would give them CRLF, and a CR after the shebang makes
+# the kernel look for an interpreter named "/bin/sh\r".
+*.sh              text eol=lf
+Dockerfile        text eol=lf
+*.mjs             text eol=lf
+compose.yaml      text eol=lf
+.env.example      text eol=lf
+*.htaccess        text eol=lf
+
+*.css  linguist-vendored
 *.scss linguist-vendored
-*.js linguist-vendored
+*.js   linguist-vendored
+
 CHANGELOG.md export-ignore
