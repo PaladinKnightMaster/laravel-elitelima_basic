@@ -1,0 +1,67 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Dependabot PRs here are almost entirely dependency bumps, so the check that
+# carries real signal is "does the lockfile still resolve and install".
+#
+# Three things in this repo are ALREADY broken independently of any bump, and
+# were only discovered because this workflow was added. They are marked
+# continue-on-error so they report the debt without blocking every PR. Remove
+# each flag as its underlying issue is fixed:
+#   1. npm scripts pass webpack 3 flags (--no-progress/--hide-modules) that
+#      webpack-cli 4 removed, left over from the laravel-mix 2 -> 6 bump.
+#   2. webpack.mix.js reads public/theme/** and public/admin/**, but the
+#      cPanel document-root layout moved those trees to ./theme and ./admin.
+#   3. composer.lock is out of sync with composer.json since the framework
+#      constraint went 5.6.* -> ^6.20.42.
+permissions:
+  contents: read
+
+jobs:
+  npm:
+    name: npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # laravel-mix 6.0.49 / webpack 5.
+          node-version: '18'
+          cache: 'npm'
+
+      # The real gate: proves a Dependabot lockfile change still installs.
+      - name: Install from lockfile
+        run: npm ci
+
+      # Known broken (reasons 1 and 2 above). Informational until fixed.
+      - name: Compile assets
+        continue-on-error: true
+        run: npx mix --production
+
+  php:
+    name: php
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          # composer.json declares php ^7.1.3; installed Laravel 6.20 needs
+          # ^7.2.5. 7.4 is the last 7.x release.
+          php-version: '7.4'
+          coverage: none
+
+      # Known broken (reason 3 above). Informational until the lock is rebuilt.
+      - name: Validate composer.json / composer.lock are in sync
+        continue-on-error: true
+        run: composer validate --strict --no-check-publish
+
+      # The real gate: proves the locked dependency set still installs.
+      - name: Install from lockfile
+        run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
