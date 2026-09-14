@@ -77,3 +77,30 @@ jobs:
 
       - name: Tests
         run: php artisan test
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Proves the runtime image actually builds: PHP 8.3 with gd, the Apache
+      # document root pointed at public/, and composer install against the lock.
+      - name: Build image
+        run: docker build -t elitelima:ci .
+
+      - name: Verify the extensions the app needs are present
+        run: |
+          set -e
+          for ext in gd pdo_mysql mbstring fileinfo intl exif; do
+            docker run --rm elitelima:ci php -m | grep -qx "$ext"               || { echo "::error::missing PHP extension: $ext"; exit 1; }
+            echo "ok: $ext"
+          done
+
+      - name: Verify Apache serves from public/ and the app boots
+        run: |
+          set -e
+          docker run --rm elitelima:ci sh -c 'php artisan --version'
+          docker run --rm elitelima:ci sh -c 'test -f public/index.php'
+          docker run --rm elitelima:ci sh -c 'test -f public/uploads/.htaccess'
+          docker run --rm elitelima:ci sh -c 'grep -q "DocumentRoot /var/www/html/public" /etc/apache2/sites-available/000-default.conf'
