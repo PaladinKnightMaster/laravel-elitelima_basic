@@ -26,7 +26,7 @@ if(isset($settings['favicon'])) {
     
 		
 	<?php 
-	$uri = $_SERVER['REQUEST_URI'];
+	$uri = request()->getRequestUri();
 	if($uri == '/models-hostess/es'){
 		?>
 		<meta name="description" content="Una de las principales agencias de Anfitrionas en Perú, Elite Lima gestiona sesiones de fotos, desfiles de moda, reservas de artistas para varios de sus clientes" />
