@@ -198,21 +198,19 @@ class GirlsController extends Controller
                     $girl_image->save();
 
                     $c_image = base_path()."/uploads/girls/".$girl_image->image;
-                    $img = Image::make($c_image);
+                    $img = Image::read($c_image);
                     $waterMark = base_path()."/uploads/".$watermark;
-                    $waterMark = Image::make($waterMark);
+                    $waterMark = Image::read($waterMark);
                     $watermarkSize = $img->width() - 20;
-                    $waterMark->resize($watermarkSize, null, function ($constraint) {
-                        $constraint->aspectRatio();
-                    });
+                    $waterMark->scale(width: $watermarkSize);
                     // and insert a watermark for example
-                    $img->insert($waterMark, 'center');
+                    $img->place($waterMark, 'center');
                     // finally we save the image as a new file
                     $newImage = base_path()."/uploads/girls/".$girl_image->image;
                     $img->save($newImage);
 //                    $image;
-                    $thumb_image = Image::make($newImage);
-                    $thumb_image->fit(300);
+                    $thumb_image = Image::read($newImage);
+                    $thumb_image->cover(300, 300);
                     $newThumb = base_path()."/uploads/girls/thumbs/".$girl_image->image;
                     $thumb_image->save($newThumb);
                 }
@@ -344,21 +342,19 @@ class GirlsController extends Controller
                     $girl_image->save();
 
                     $c_image = base_path()."/uploads/girls/".$girl_image->image;
-                    $img = Image::make($c_image);
+                    $img = Image::read($c_image);
                     $waterMark = base_path()."/uploads/".$watermark;
-                    $waterMark = Image::make($waterMark);
+                    $waterMark = Image::read($waterMark);
                     $watermarkSize = $img->width() - 20;
-                    $waterMark->resize($watermarkSize, null, function ($constraint) {
-                        $constraint->aspectRatio();
-                    });
+                    $waterMark->scale(width: $watermarkSize);
                     // and insert a watermark for example
-                    $img->insert($waterMark, 'center');
+                    $img->place($waterMark, 'center');
                     // finally we save the image as a new file
                     $newImage = base_path()."/uploads/girls/".$girl_image->image;
                     $img->save($newImage);
 
-                    $thumb_image = Image::make($newImage);
-                    $thumb_image->fit(300);
+                    $thumb_image = Image::read($newImage);
+                    $thumb_image->cover(300, 300);
                     $newThumb = base_path()."/uploads/girls/thumbs/".$girl_image->image;
                     $thumb_image->save($newThumb);
 
