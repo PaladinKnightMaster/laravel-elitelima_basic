@@ -185,7 +185,7 @@ class GirlsController extends Controller
         if(count($request->images )> 0) {
             if ($this->rules($request->all())){
                 foreach ($request->images as $key => $image) {
-                    $destinationPath = base_path()."/uploads/girls";
+                    $destinationPath = public_path()."/uploads/girls";
                     $extension = $image->getClientOriginalExtension();
                     $fileName = $image->getClientOriginalName();
                     $fileName = time() . $fileName;
@@ -197,21 +197,21 @@ class GirlsController extends Controller
                     $girl_image->es = $data["es"][$key];
                     $girl_image->save();
 
-                    $c_image = base_path()."/uploads/girls/".$girl_image->image;
+                    $c_image = public_path()."/uploads/girls/".$girl_image->image;
                     $img = Image::read($c_image);
-                    $waterMark = base_path()."/uploads/".$watermark;
+                    $waterMark = public_path()."/uploads/".$watermark;
                     $waterMark = Image::read($waterMark);
                     $watermarkSize = $img->width() - 20;
                     $waterMark->scale(width: $watermarkSize);
                     // and insert a watermark for example
                     $img->place($waterMark, 'center');
                     // finally we save the image as a new file
-                    $newImage = base_path()."/uploads/girls/".$girl_image->image;
+                    $newImage = public_path()."/uploads/girls/".$girl_image->image;
                     $img->save($newImage);
 //                    $image;
                     $thumb_image = Image::read($newImage);
                     $thumb_image->cover(300, 300);
-                    $newThumb = base_path()."/uploads/girls/thumbs/".$girl_image->image;
+                    $newThumb = public_path()."/uploads/girls/thumbs/".$girl_image->image;
                     $thumb_image->save($newThumb);
                 }
             }
@@ -256,7 +256,7 @@ class GirlsController extends Controller
         if ($productImage)
         {
             $productImage->delete();
-            $delete_old_file=base_path()."/uploads/girls/".$productImage->image;
+            $delete_old_file=public_path()."/uploads/girls/".$productImage->image;
             File::delete($delete_old_file);
         }
         Session::flash('success_message', 'Success! Girl Image successfully deleted!');
@@ -329,7 +329,7 @@ class GirlsController extends Controller
         if(array_key_exists('images', $data)) {
             if ($this->rules($request->all())){
                 foreach ($request->images as $key => $image) {
-                    $destinationPath = base_path()."/uploads/girls";
+                    $destinationPath = public_path()."/uploads/girls";
                     $extension = $image->getClientOriginalExtension();
                     $fileName = $image->getClientOriginalName();
                     $fileName = time() . $fileName;
@@ -341,21 +341,21 @@ class GirlsController extends Controller
                     $girl_image->es = $data["es"][$key];
                     $girl_image->save();
 
-                    $c_image = base_path()."/uploads/girls/".$girl_image->image;
+                    $c_image = public_path()."/uploads/girls/".$girl_image->image;
                     $img = Image::read($c_image);
-                    $waterMark = base_path()."/uploads/".$watermark;
+                    $waterMark = public_path()."/uploads/".$watermark;
                     $waterMark = Image::read($waterMark);
                     $watermarkSize = $img->width() - 20;
                     $waterMark->scale(width: $watermarkSize);
                     // and insert a watermark for example
                     $img->place($waterMark, 'center');
                     // finally we save the image as a new file
-                    $newImage = base_path()."/uploads/girls/".$girl_image->image;
+                    $newImage = public_path()."/uploads/girls/".$girl_image->image;
                     $img->save($newImage);
 
                     $thumb_image = Image::read($newImage);
                     $thumb_image->cover(300, 300);
-                    $newThumb = base_path()."/uploads/girls/thumbs/".$girl_image->image;
+                    $newThumb = public_path()."/uploads/girls/thumbs/".$girl_image->image;
                     $thumb_image->save($newThumb);
 
                 }
@@ -380,7 +380,7 @@ class GirlsController extends Controller
         if(isset($product->porfolioimages)){
             foreach($product->porfolioimages as $product_image){
             $product_image->delete();
-            $delete_old_file=base_path()."/uploads/girls/".$product_image->image;
+            $delete_old_file=public_path()."/uploads/girls/".$product_image->image;
             File::delete($delete_old_file);
         } 
         }
