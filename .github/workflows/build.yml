@@ -18,15 +18,18 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          # laravel-mix 6.0.49 / webpack 5.
-          node-version: '18'
-          cache: 'npm'
+          node-version: '22'
 
-      - name: Install from lockfile
-        run: npm ci
-
-      - name: Compile assets
+      # build-assets.mjs has no dependencies, so there is nothing to install.
+      - name: Build assets
         run: npm run production
+
+      - name: Confirm the concatenated JS parses
+        run: |
+          set -e
+          node --check public/theme/js/theme.js
+          node --check public/admin/js/user.js
+          echo "both bundles parse"
 
       - name: Confirm bundles were emitted
         run: |

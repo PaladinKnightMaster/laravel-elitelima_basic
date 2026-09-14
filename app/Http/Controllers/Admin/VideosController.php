@@ -141,11 +141,10 @@ class VideosController extends Controller
                 $this->validate($request, [
                     'poster' => 'required|image|mimes:jpeg,png,jpg'
                 ]);
-                $destinationPath = base_path()."/uploads/poster/";
-                $extension = $file->getClientOriginalExtension('poster');
-                $fileName = $file->getClientOriginalName('poster');
-                $fileName = time().$fileName;
-                //renameing image
+                $destinationPath = public_path()."/uploads/poster/";
+                $fileName = GirlsController::safeFileName(
+                    $request->file('poster'), ['jpeg', 'jpg', 'png']
+                );
                 $request->file('poster')->move($destinationPath, $fileName);
                 $video->poster = $fileName;
 //                $delete_old_file="uploads/poster/".$video->pic;
@@ -159,11 +158,10 @@ class VideosController extends Controller
                     'video' => 'required|mimes:mp4,ogx,oga,ogv,ogg,webm',
                 ]);
                 $file = $request->file('video');
-                $destinationPath = base_path()."/uploads/videos/";
-                $extension = $file->getClientOriginalExtension('video');
-                $fileName = $file->getClientOriginalName('video');
-                $fileName = time().$fileName;
-                //renameing image
+                $destinationPath = public_path()."/uploads/videos/";
+                $fileName = GirlsController::safeFileName(
+                    $request->file('video'), ['mp4', 'ogx', 'oga', 'ogv', 'ogg', 'webm']
+                );
                 $request->file('video')->move($destinationPath, $fileName);
                 $video->video = $fileName;
 //                $delete_old_file="uploads/poster/".$video->pic;
@@ -229,11 +227,10 @@ class VideosController extends Controller
                     'poster' => 'required|image|mimes:jpeg,png,jpg'
                 ]);
 
-                $destinationPath = base_path()."/uploads/poster/";
-                $extension = $file->getClientOriginalExtension('poster');
-                $fileName = $file->getClientOriginalName('poster');
-                $fileName = time().$fileName;
-                //renameing image
+                $destinationPath = public_path()."/uploads/poster/";
+                $fileName = GirlsController::safeFileName(
+                    $request->file('poster'), ['jpeg', 'jpg', 'png']
+                );
                 $request->file('poster')->move($destinationPath, $fileName);
                 $video->poster = $fileName;
 //                $delete_old_file="uploads/poster/".$video->pic;
@@ -247,11 +244,10 @@ class VideosController extends Controller
                     'video' => 'required|mimes:mp4,ogx,oga,ogv,ogg,webm',
                 ]);
                  $file = $request->file('video');
-                $destinationPath = base_path()."/uploads/videos/";
-                $extension = $file->getClientOriginalExtension('video');
-                $fileName = $file->getClientOriginalName('video');
-                $fileName = time().$fileName;
-                //renameing image
+                $destinationPath = public_path()."/uploads/videos/";
+                $fileName = GirlsController::safeFileName(
+                    $request->file('video'), ['mp4', 'ogx', 'oga', 'ogv', 'ogg', 'webm']
+                );
                 $request->file('video')->move($destinationPath, $fileName);
                 $video->video = $fileName;
 //                $delete_old_file="uploads/poster/".$video->pic;
@@ -276,7 +272,7 @@ class VideosController extends Controller
     public function destroy($id)
     {
         $video = Video::findOrFail($id);
-        $delete_old_file=base_path()."/uploads/videos/".$video->video;
+        $delete_old_file=public_path()."/uploads/videos/".$video->video;
         File::delete($delete_old_file);
         $video->delete();
         Session::flash('success_message', 'Video successfully deleted!');
@@ -300,7 +296,7 @@ class VideosController extends Controller
         foreach ($input['video_id'] as $key => $val) {
 //            dd("working");
             $video = Video::findOrFail($val);
-            $delete_old_file=base_path()."/uploads/videos/".$video->video;
+            $delete_old_file=public_path()."/uploads/videos/".$video->video;
             File::delete($delete_old_file);
             $video->delete();
 
