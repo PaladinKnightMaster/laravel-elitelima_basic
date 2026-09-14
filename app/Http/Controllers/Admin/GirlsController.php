@@ -129,14 +129,37 @@ class GirlsController extends Controller
      */
 
 
-    public function rules($request)
+    /**
+     * Validation rules for the uploaded image set.
+     *
+     * @return array<string, string>
+     */
+    public function rules()
     {
-        $photos = count($request['images']);
-        foreach(range(0, $photos) as $index) {
-            $rules['images.' . $index] = 'image|mimes:jpeg,bmp,png|max:2000';
+        return ['images.*' => 'required|image|mimes:jpeg,jpg,bmp,png|max:2000'];
+    }
+
+    /**
+     * Build a safe on-disk name for an uploaded file.
+     *
+     * The client controls both the name and the extension it sends, so neither
+     * is reused. The extension is re-derived from the file's sniffed MIME type
+     * and checked against $allowed; anything else is rejected. Without this an
+     * admin can write .php into public/uploads and then execute it.
+     *
+     * @param  \Illuminate\Http\UploadedFile  $file
+     * @param  array<int, string>  $allowed
+     * @return string
+     */
+    public static function safeFileName($file, array $allowed)
+    {
+        $extension = strtolower((string) $file->extension());
+
+        if (! in_array($extension, $allowed, true)) {
+            abort(422, 'Unsupported file type.');
         }
 
-        return $rules;
+        return time().'_'.bin2hex(random_bytes(8)).'.'.$extension;
     }
     public function store(Request $request)
     {
@@ -183,12 +206,11 @@ class GirlsController extends Controller
         //Saving Images
 
         if(count($request->images )> 0) {
-            if ($this->rules($request->all())){
+            $this->validate($request, $this->rules());
+            {
                 foreach ($request->images as $key => $image) {
                     $destinationPath = public_path()."/uploads/girls";
-                    $extension = $image->getClientOriginalExtension();
-                    $fileName = $image->getClientOriginalName();
-                    $fileName = time() . $fileName;
+                    $fileName = self::safeFileName($image, ['jpeg', 'jpg', 'bmp', 'png']);
                     $image->move($destinationPath, $fileName);
                     $girl_image = new GirlImage();
                     $girl_image->girl_id = $girl->id;
@@ -327,12 +349,11 @@ class GirlsController extends Controller
 
         }
         if(array_key_exists('images', $data)) {
-            if ($this->rules($request->all())){
+            $this->validate($request, $this->rules());
+            {
                 foreach ($request->images as $key => $image) {
                     $destinationPath = public_path()."/uploads/girls";
-                    $extension = $image->getClientOriginalExtension();
-                    $fileName = $image->getClientOriginalName();
-                    $fileName = time() . $fileName;
+                    $fileName = self::safeFileName($image, ['jpeg', 'jpg', 'bmp', 'png']);
                     $image->move($destinationPath, $fileName);
                     $girl_image = new GirlImage();
                     $girl_image->girl_id = $girl->id;

@@ -4,7 +4,8 @@
 /storage/*.key
 /storage/pail
 /vendor
-/public/uploads
+/public/uploads/*
+!/public/uploads/.htaccess
 /.idea
 /.vscode
 /.vagrant

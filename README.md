@@ -131,6 +131,15 @@ changing them:
   `config:clear`, `cache:clear` and `config:cache`. Anyone who knows the URL can
   call it. It should be removed or put behind the admin guard before this is
   exposed publicly.
+- **nginx deployments must replicate `public/uploads/.htaccess`.** It stops
+  anything in the uploads tree from being executed, and Apache reads it
+  automatically; nginx does not. Add to the server block:
+
+  ```nginx
+  location ^~ /uploads/ {
+      location ~ \.(php[3457]?|phar|phtml|pht|cgi|pl|py|sh)$ { deny all; }
+  }
+  ```
 - **Image handling is unverified since the upgrade** — Intervention Image was
   migrated from v2 to v3 (`Image::make`→`read`, `resize`→`scale`,
   `insert`→`place`, `fit`→`cover`), but no environment with `gd`/`imagick` has

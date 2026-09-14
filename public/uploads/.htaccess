@@ -1,0 +1,30 @@
+# Uploads are user-supplied content served straight from the document root.
+# Nothing in here may ever be executed, whatever its extension says.
+#
+# This is a second line of defence: the controllers already rebuild every
+# stored filename from the sniffed MIME type rather than trusting the client.
+#
+# Apache only. On nginx, add the equivalent to the server block:
+#
+#   location ^~ /uploads/ {
+#       location ~ \.(php|phar|phtml|ph[3457]?)$ { deny all; }
+#   }
+
+php_flag engine off
+
+<IfModule mod_mime.c>
+    RemoveHandler .php .phar .phtml .php3 .php4 .php5 .php7 .pht
+    RemoveType .php .phar .phtml .php3 .php4 .php5 .php7 .pht
+</IfModule>
+
+<FilesMatch "(?i)\.(php[3457]?|phar|phtml|pht|cgi|pl|py|sh|htaccess)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+Options -Indexes -ExecCGI

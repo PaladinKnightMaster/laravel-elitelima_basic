@@ -142,10 +142,9 @@ class VideosController extends Controller
                     'poster' => 'required|image|mimes:jpeg,png,jpg'
                 ]);
                 $destinationPath = public_path()."/uploads/poster/";
-                $extension = $file->getClientOriginalExtension('poster');
-                $fileName = $file->getClientOriginalName('poster');
-                $fileName = time().$fileName;
-                //renameing image
+                $fileName = GirlsController::safeFileName(
+                    $request->file('poster'), ['jpeg', 'jpg', 'png']
+                );
                 $request->file('poster')->move($destinationPath, $fileName);
                 $video->poster = $fileName;
 //                $delete_old_file="uploads/poster/".$video->pic;
@@ -160,10 +159,9 @@ class VideosController extends Controller
                 ]);
                 $file = $request->file('video');
                 $destinationPath = public_path()."/uploads/videos/";
-                $extension = $file->getClientOriginalExtension('video');
-                $fileName = $file->getClientOriginalName('video');
-                $fileName = time().$fileName;
-                //renameing image
+                $fileName = GirlsController::safeFileName(
+                    $request->file('video'), ['mp4', 'ogx', 'oga', 'ogv', 'ogg', 'webm']
+                );
                 $request->file('video')->move($destinationPath, $fileName);
                 $video->video = $fileName;
 //                $delete_old_file="uploads/poster/".$video->pic;
@@ -230,10 +228,9 @@ class VideosController extends Controller
                 ]);
 
                 $destinationPath = public_path()."/uploads/poster/";
-                $extension = $file->getClientOriginalExtension('poster');
-                $fileName = $file->getClientOriginalName('poster');
-                $fileName = time().$fileName;
-                //renameing image
+                $fileName = GirlsController::safeFileName(
+                    $request->file('poster'), ['jpeg', 'jpg', 'png']
+                );
                 $request->file('poster')->move($destinationPath, $fileName);
                 $video->poster = $fileName;
 //                $delete_old_file="uploads/poster/".$video->pic;
@@ -248,10 +245,9 @@ class VideosController extends Controller
                 ]);
                  $file = $request->file('video');
                 $destinationPath = public_path()."/uploads/videos/";
-                $extension = $file->getClientOriginalExtension('video');
-                $fileName = $file->getClientOriginalName('video');
-                $fileName = time().$fileName;
-                //renameing image
+                $fileName = GirlsController::safeFileName(
+                    $request->file('video'), ['mp4', 'ogx', 'oga', 'ogv', 'ogg', 'webm']
+                );
                 $request->file('video')->move($destinationPath, $fileName);
                 $video->video = $fileName;
 //                $delete_old_file="uploads/poster/".$video->pic;
