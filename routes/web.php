@@ -85,7 +85,7 @@ Route::group([
     Route::resource('countries','CountriesController');
     Route::get('countries/edit/{id}', 'CountriesController@edit')->name('countries-edit');
     Route::post('get-countries', 'CountriesController@getCountries')->name('admin-getAddedCountries');
-    Route::get('countries/delete/{id}', 'CountriesController@destroy')->name('user-delete');
+    Route::get('countries/delete/{id}', 'CountriesController@destroy')->name('country-delete');
     Route::post('delete-selected-countries', 'CountriesController@DeleteSelectedCountries')->name('delete-selected-countries');
     Route::post('countries/detail', 'CountriesController@getCounrtyDetail')->name('admin-getCountries');
 
@@ -94,7 +94,7 @@ Route::group([
     Route::resource('cities','CitiesController');
     Route::get('cities/edit/{id}', 'CitiesController@edit')->name('cities-edit');
     Route::post('get-cities', 'CitiesController@getCities')->name('admin-getAddedCities');
-    Route::get('cities/delete/{id}', 'CitiesController@destroy')->name('user-delete');
+    Route::get('cities/delete/{id}', 'CitiesController@destroy')->name('city-delete');
     Route::post('delete-selected-cities', 'CitiesController@DeleteSelectedCities')->name('delete-selected-cities');
     Route::post('cities/detail', 'CitiesController@getCityDetail')->name('admin-getCities');
 

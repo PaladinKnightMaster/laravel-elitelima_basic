@@ -21,26 +21,65 @@ reflects its origins.
 The `gd`/`imagick` requirement is not optional: uploading a talent photo
 watermarks it and generates a thumbnail, and will fatal without one.
 
-## Setup
+## Running it
+
+### With Docker (recommended)
+
+Brings up the app on PHP 8.3 with `gd`, plus MySQL 8.4, with no local PHP or
+MySQL install involved:
+
+```bash
+docker compose up --build
+```
+
+Then open <http://localhost:8000>. The first boot generates an `APP_KEY`, waits
+for MySQL and runs the migrations (`RUN_MIGRATIONS=true`, the compose default —
+set it to `false` once the schema is settled).
+
+That generated key is **ephemeral**: it lives in the container only, so every
+rebuild invalidates existing sessions and encrypted cookies. Fine while
+developing; for anything long-lived, generate one and pass it in:
+
+```bash
+php artisan key:generate --show     # or: docker compose run --rm app php artisan key:generate --show
+APP_KEY='base64:...' docker compose up -d
+```
+
+Uploads and database files live in named volumes (`uploads`, `dbdata`) so they
+survive `docker compose down`. Use `down -v` only when you genuinely want to
+discard them.
+
+One caveat with that volume: Docker seeds a named volume from the image only
+the first time it is created. If you already have an `uploads` volume from
+before `public/uploads/.htaccess` existed, the rule that stops PHP executing
+there will not appear in it on its own. Copy it in once:
+
+```bash
+docker compose cp public/uploads/.htaccess app:/var/www/html/public/uploads/.htaccess
+```
+
+Override any of `APP_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` through
+the environment or a local `.env`.
+
+The image is Apache with mod_php rather than nginx, deliberately: the app
+depends on `.htaccess` both for Laravel's front-controller rewrites and for the
+rule that stops anything in `public/uploads/` being executed.
+
+### Without Docker
+
+You need PHP 8.2+ with `gd` (or `imagick`), `pdo_mysql`, `mbstring` and
+`fileinfo`, plus a MySQL server. On Windows, Laragon bundles all of it; on
+macOS, Laravel Herd plus a MySQL of your choice. Then:
 
 ```bash
 composer install
 cp .env.example .env
 php artisan key:generate
-```
-
-Set your database credentials in `.env`, then:
-
-```bash
 php artisan migrate
-npm run production
-```
-
-The app serves from `public/`. For local development:
-
-```bash
 php artisan serve
 ```
+
+`php -m` has to list `gd` or `imagick`, or photo uploads will fatal.
 
 ### Admin panel
 
@@ -51,6 +90,22 @@ dump.
 
 The public site reads its configuration from the `settings` table on nearly
 every page, so an empty database will error rather than render defaults.
+
+## Deployment
+
+`docker compose up -d` on any host with Docker is the whole deployment. The
+image builds the dependencies in, and the entrypoint handles key generation,
+waiting for the database and warming the view and route caches.
+
+Two things the host must provide:
+
+- **Persistent storage for `public/uploads/`.** Production media is around
+  607 MB; an ephemeral container filesystem will lose it on every restart.
+- **A MySQL database.** Either the compose `db` service with a volume, or a
+  managed instance with `DB_HOST` pointed at it.
+
+Put a reverse proxy in front for TLS. On nginx, mirror the uploads rule from
+[Known issues](#known-issues), since nginx does not read `.htaccess`.
 
 ## Assets
 

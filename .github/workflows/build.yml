@@ -75,5 +75,91 @@ jobs:
       - name: Compile every Blade template
         run: php artisan view:cache
 
+      # Fails on duplicate route names, which otherwise only surface when
+      # someone tries to cache routes in production.
+      - name: Cache routes
+        run: php artisan route:cache
+
       - name: Tests
         run: php artisan test
+
+  docker:
+    name: docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t elitelima:ci .
+
+      # --entrypoint sh bypasses the runtime entrypoint. Going through it would
+      # make each check sit out the 2-minute wait for a database that is not
+      # running, and these assertions need nothing booted.
+      - name: Verify image contents
+        run: |
+          set -e
+          run() { docker run --rm --entrypoint sh elitelima:ci -c "$1"; }
+
+          for ext in gd pdo_mysql mbstring fileinfo intl exif; do
+            run "php -m" | grep -qx "$ext"               || { echo "::error::missing PHP extension: $ext"; exit 1; }
+            echo "ok: extension $ext"
+          done
+
+          run "test -f public/index.php"          && echo "ok: public/index.php"
+          run "test -f public/uploads/.htaccess"  && echo "ok: uploads .htaccess shipped"
+          run "test -f vendor/autoload.php"       && echo "ok: composer install ran"
+          run "php artisan --version"
+
+          # Apache resolves ${APACHE_DOCUMENT_ROOT} at runtime, so assert the
+          # variable is wired up rather than expecting an expanded path here.
+          run "grep -q 'DocumentRoot \${APACHE_DOCUMENT_ROOT}' /etc/apache2/sites-available/000-default.conf"
+          run "test \"\$APACHE_DOCUMENT_ROOT\" = /var/www/html/public"
+          echo "ok: document root points at public/"
+
+          run "grep -q 'AllowOverride All' /etc/apache2/conf-available/laravel.conf"
+          echo "ok: AllowOverride All, so .htaccess is honoured"
+
+      # The real test: the same `docker compose up` a developer or server runs.
+      - name: Boot the full stack and request a page
+        run: |
+          set -e
+          docker compose up -d --wait --wait-timeout 300 || {
+            docker compose logs --no-color | tail -60
+            exit 1
+          }
+
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /tmp/body -w '%{http_code}' http://localhost:8000/ || true)
+            case "$code" in
+              200|302) echo "ok: GET / returned $code"; break ;;
+            esac
+            [ "$i" = 15 ] && {
+              echo "::error::GET / never succeeded (last code: $code)"
+              # The debug page is ~1.6MB of HTML, most of it inlined JS, so the
+              # log is far more use than the body.
+              echo '--- laravel.log ---'
+              docker compose exec -T app sh -c 'tail -60 storage/logs/laravel.log' || true
+              echo '--- page title ---'
+              grep -oE '<title>[^<]*</title>' /tmp/body | head -2 || true
+              exit 1
+            }
+            sleep 3
+          done
+
+          # A request for something executable under uploads must not run it.
+          docker compose exec -T app sh -c 'printf "<?php echo 42;" > public/uploads/probe.php'
+          probe=$(curl -s -o /tmp/probe -w '%{http_code}' http://localhost:8000/uploads/probe.php || true)
+          body=$(cat /tmp/probe || true)
+          if [ "$probe" = "200" ] && [ "$body" = "42" ]; then
+            echo "::error::uploads/.htaccess did not block PHP execution"
+            exit 1
+          fi
+          echo "ok: PHP under uploads/ is not executed (status $probe)"
+
+      - name: Compose logs on failure
+        if: failure()
+        run: docker compose logs --no-color | tail -100
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
