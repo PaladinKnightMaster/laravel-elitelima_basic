@@ -20,3 +20,14 @@ yarn-error.log
 .phpunit.result.cache
 .phpunit.cache
 auth.json
+
+# Runtime artifacts. These directories each carry their own .gitignore, but
+# `artisan view:clear` deletes everything inside storage/framework/views,
+# that .gitignore included, after which compiled templates start showing up
+# as untracked files. Belt and braces.
+/storage/framework/views/*.php
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/logs/*.log
+/bootstrap/cache/*.php

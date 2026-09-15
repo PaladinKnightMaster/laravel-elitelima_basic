@@ -24,6 +24,10 @@
     </filter>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- Hermetic: the suite must not depend on, or write to, whatever
+             database .env happens to point at. -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="SESSION_DRIVER" value="array"/>
