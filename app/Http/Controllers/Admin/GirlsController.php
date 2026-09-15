@@ -267,7 +267,14 @@ class GirlsController extends Controller
 //                    $image;
                     $thumb_image = Image::read($newImage);
                     $thumb_image->cover(300, 300);
-                    $newThumb = public_path()."/uploads/girls/thumbs/".$girl_image->image;
+                    // Intervention's save() will not create missing directories,
+                    // and move() above only creates uploads/girls, so on a fresh
+                    // install every thumbnail silently failed to appear.
+                    $thumbDir = public_path()."/uploads/girls/thumbs";
+                    if (! is_dir($thumbDir)) {
+                        mkdir($thumbDir, 0775, true);
+                    }
+                    $newThumb = $thumbDir."/".$girl_image->image;
                     $thumb_image->save($newThumb);
                 }
             }
@@ -411,7 +418,14 @@ class GirlsController extends Controller
 
                     $thumb_image = Image::read($newImage);
                     $thumb_image->cover(300, 300);
-                    $newThumb = public_path()."/uploads/girls/thumbs/".$girl_image->image;
+                    // Intervention's save() will not create missing directories,
+                    // and move() above only creates uploads/girls, so on a fresh
+                    // install every thumbnail silently failed to appear.
+                    $thumbDir = public_path()."/uploads/girls/thumbs";
+                    if (! is_dir($thumbDir)) {
+                        mkdir($thumbDir, 0775, true);
+                    }
+                    $newThumb = $thumbDir."/".$girl_image->image;
                     $thumb_image->save($newThumb);
 
                 }

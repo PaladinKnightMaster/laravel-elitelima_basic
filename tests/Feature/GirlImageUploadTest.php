@@ -187,7 +187,9 @@ class GirlImageUploadTest extends TestCase
     {
         [$cityId, $hairId, $eyeId] = $this->lookups();
 
-        $post = fn () => $this->actingAsAdmin()->post('/admin/girls', [
+        $this->actingAsAdmin();
+
+        $post = fn () => $this->post('/admin/girls', [
             'name' => 'Ana Maria',
             'status' => 'active',
             'city' => $cityId,
