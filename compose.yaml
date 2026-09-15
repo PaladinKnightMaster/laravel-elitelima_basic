@@ -16,9 +16,9 @@ services:
       DB_DATABASE: "${DB_DATABASE:-elitelima}"
       DB_USERNAME: "${DB_USERNAME:-elitelima}"
       DB_PASSWORD: "${DB_PASSWORD:-secret}"
-      SESSION_DRIVER: database
-      CACHE_STORE: database
-      QUEUE_CONNECTION: database
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      QUEUE_CONNECTION: sync
       MAIL_MAILER: log
       RUN_MIGRATIONS: "${RUN_MIGRATIONS:-true}"
     volumes:

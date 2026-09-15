@@ -133,10 +133,14 @@ jobs:
             case "$code" in
               200|302) echo "ok: GET / returned $code"; break ;;
             esac
-            [ "$i" = 30 ] && {
+            [ "$i" = 15 ] && {
               echo "::error::GET / never succeeded (last code: $code)"
-              tail -40 /tmp/body || true
-              docker compose logs --no-color | tail -60
+              # The debug page is ~1.6MB of HTML, most of it inlined JS, so the
+              # log is far more use than the body.
+              echo '--- laravel.log ---'
+              docker compose exec -T app sh -c 'tail -60 storage/logs/laravel.log' || true
+              echo '--- page title ---'
+              grep -oE '<title>[^<]*</title>' /tmp/body | head -2 || true
               exit 1
             }
             sleep 3
