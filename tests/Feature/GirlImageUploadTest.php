@@ -114,6 +114,7 @@ class GirlImageUploadTest extends TestCase
 
         $response = $this->actingAsAdmin()->post('/admin/girls', [
             'name' => 'Test Model',
+            'status' => 'active',
             'city' => $cityId,
             'hair_color' => $hairId,
             'eye_color' => $eyeId,
@@ -146,6 +147,7 @@ class GirlImageUploadTest extends TestCase
 
         $this->actingAsAdmin()->post('/admin/girls', [
             'name' => 'Test Model',
+            'status' => 'active',
             'city' => $cityId,
             'hair_color' => $hairId,
             'eye_color' => $eyeId,
@@ -167,6 +169,7 @@ class GirlImageUploadTest extends TestCase
 
         $response = $this->actingAsAdmin()->post('/admin/girls', [
             'name' => 'Test Model',
+            'status' => 'active',
             'city' => $cityId,
             'hair_color' => $hairId,
             'eye_color' => $eyeId,
@@ -178,5 +181,25 @@ class GirlImageUploadTest extends TestCase
         $response->assertSessionHasErrors('images.0');
         $this->assertSame(0, GirlImage::count(), 'A non-image upload was stored.');
         $this->assertFileDoesNotExist($this->uploads.'/girls/shell.php');
+    }
+
+    public function test_a_slug_is_generated_and_kept_unique(): void
+    {
+        [$cityId, $hairId, $eyeId] = $this->lookups();
+
+        $post = fn () => $this->actingAsAdmin()->post('/admin/girls', [
+            'name' => 'Ana Maria',
+            'status' => 'active',
+            'city' => $cityId,
+            'hair_color' => $hairId,
+            'eye_color' => $eyeId,
+        ]);
+
+        $post();
+        $post();
+
+        $slugs = Girl::orderBy('id')->pluck('slug')->all();
+
+        $this->assertSame(['ana-maria', 'ana-maria-2'], $slugs);
     }
 }

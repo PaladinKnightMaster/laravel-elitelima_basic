@@ -9,6 +9,7 @@ use App\GirlImage;
 use App\HairColor;
 use App\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use Auth;
 use Illuminate\Support\Facades\Session;
@@ -161,6 +162,38 @@ class GirlsController extends Controller
 
         return time().'_'.bin2hex(random_bytes(8)).'.'.$extension;
     }
+    /**
+     * Build a URL slug that is not already taken.
+     *
+     * girls.slug is NOT NULL and unique, but nothing ever assigned it. On a
+     * strict database the insert fails outright; on a permissive MySQL the
+     * first record silently gets '' and the second collides on the unique
+     * index. Public profile URLs are /girls/{slug}, so the value matters.
+     *
+     * @param  string|null  $name
+     * @param  int|null  $ignoreId  row to exclude, when updating in place
+     * @return string
+     */
+    private function uniqueSlug($name, $ignoreId = null)
+    {
+        $base = Str::slug((string) $name) ?: 'model';
+        $slug = $base;
+
+        for ($suffix = 2; ; $suffix++) {
+            $taken = Girl::where('slug', $slug)
+                ->when($ignoreId, function ($query) use ($ignoreId) {
+                    return $query->where('id', '!=', $ignoreId);
+                })
+                ->exists();
+
+            if (! $taken) {
+                return $slug;
+            }
+
+            $slug = $base.'-'.$suffix;
+        }
+    }
+
     public function store(Request $request)
     {
         $this->validate($request, [
@@ -180,6 +213,7 @@ class GirlsController extends Controller
 
         $girl = new  Girl();
         $girl->name = $request->input('name');
+        $girl->slug = $this->uniqueSlug($request->input('name'));
         $girl->city_id = $request->input('city');
         $girl->status = $request->input('status');
         $girl->height = $request->input('height');
@@ -317,6 +351,7 @@ class GirlsController extends Controller
 
         $girl = Girl::findOrFail($id);
         $girl->name = $request->input('name');
+        $girl->slug = $this->uniqueSlug($request->input('name'), $girl->id);
         $girl->city_id = $request->input('city');
         $girl->status = $request->input('status');
         $girl->height = $request->input('height');
