@@ -182,10 +182,6 @@ changing them:
 
 ## Known issues
 
-- **`GET /clear` is unauthenticated** (`routes/web.php:13`) and runs
-  `config:clear`, `cache:clear` and `config:cache`. Anyone who knows the URL can
-  call it. It should be removed or put behind the admin guard before this is
-  exposed publicly.
 - **nginx deployments must replicate `public/uploads/.htaccess`.** It stops
   anything in the uploads tree from being executed, and Apache reads it
   automatically; nginx does not. Add to the server block:

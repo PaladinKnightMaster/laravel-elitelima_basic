@@ -10,12 +10,6 @@
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::get('/clear',function(){
-    Artisan::call('config:clear');
-    Artisan::call('cache:clear');
-    Artisan::call('config:cache');
-});
-
 Route::get('/', function () {
     //return view('welcome');
     return redirect()->route('home');
@@ -66,6 +60,24 @@ Route::prefix('admin')->group(function() {
 
 
 });
+// Cache clearing was a public GET /clear, from the cPanel days when there was
+// no shell to run artisan from. It is behind the admin guard now.
+//
+// config:cache is deliberately not run here: it would capture whatever
+// environment the handling process happens to have, and in a multi-container
+// deployment only that one container would get it. Clearing is safe; caching
+// from a web request is not.
+Route::middleware('auth:admin')->prefix('admin')->group(function () {
+    Route::get('/clear-cache', function () {
+        Artisan::call('config:clear');
+        Artisan::call('cache:clear');
+        Artisan::call('view:clear');
+        Artisan::call('route:clear');
+
+        return back()->with('success_message', 'Caches cleared.');
+    })->name('admin.clear-cache');
+});
+
 Route::group([
     'middleware'    => ['auth:admin'],
     'prefix'        => 'admin',
