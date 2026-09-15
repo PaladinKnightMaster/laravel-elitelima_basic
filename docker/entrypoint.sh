@@ -1,11 +1,24 @@
 #!/bin/sh
 set -e
 
-# A missing APP_KEY makes every encrypted cookie and session unreadable, so
-# generate one on first boot if the environment has not supplied it.
-if [ -z "$APP_KEY" ] && ! grep -qE '^APP_KEY=.+' .env 2>/dev/null; then
+# A missing APP_KEY makes every encrypted cookie and session unreadable.
+#
+# Note an empty APP_KEY in the environment still wins over whatever .env holds,
+# because real environment variables take precedence, so generating into .env
+# alone is not enough: the value has to be exported back out.
+if [ -z "$APP_KEY" ]; then
     [ -f .env ] || cp .env.example .env
-    php artisan key:generate --force
+
+    if ! grep -qE '^APP_KEY=base64:' .env; then
+        php artisan key:generate --force --no-ansi
+        echo "warning: generated an ephemeral APP_KEY. It lives only in this"
+        echo "         container, so every rebuild invalidates existing sessions"
+        echo "         and encrypted cookies. Set APP_KEY in the environment for"
+        echo "         anything long-lived."
+    fi
+
+    APP_KEY=$(sed -n 's/^APP_KEY=//p' .env | head -1)
+    export APP_KEY
 fi
 
 # The app reads the settings table on nearly every page, so starting before

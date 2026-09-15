@@ -36,6 +36,15 @@ Then open <http://localhost:8000>. The first boot generates an `APP_KEY`, waits
 for MySQL and runs the migrations (`RUN_MIGRATIONS=true`, the compose default —
 set it to `false` once the schema is settled).
 
+That generated key is **ephemeral**: it lives in the container only, so every
+rebuild invalidates existing sessions and encrypted cookies. Fine while
+developing; for anything long-lived, generate one and pass it in:
+
+```bash
+php artisan key:generate --show     # or: docker compose run --rm app php artisan key:generate --show
+APP_KEY='base64:...' docker compose up -d
+```
+
 Uploads and database files live in named volumes (`uploads`, `dbdata`) so they
 survive `docker compose down`. Use `down -v` only when you genuinely want to
 discard them.
