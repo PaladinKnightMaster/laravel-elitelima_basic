@@ -85,7 +85,6 @@ class GirlImageUploadTest extends TestCase
     {
         $country = new Country();
         $country->name = 'Peru';
-        $country->slug = 'peru';
         $country->save();
 
         $city = new City();
