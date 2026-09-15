@@ -27,8 +27,16 @@ if [ "${RUN_MIGRATIONS:-false}" = "true" ]; then
 fi
 
 # Cached config would bake build-time values in, so only cache what is safe.
-php artisan view:cache || true
-php artisan route:cache || true
+# Clear first: a cache written by a previous boot, or a half-written one from a
+# failed attempt, is worse than no cache at all.
+php artisan view:clear >/dev/null 2>&1 || true
+php artisan route:clear >/dev/null 2>&1 || true
+
+php artisan view:cache || echo "warning: view:cache failed, continuing without it"
+php artisan route:cache || {
+    echo "warning: route:cache failed, continuing without it"
+    php artisan route:clear >/dev/null 2>&1 || true
+}
 
 chown -R www-data:www-data storage bootstrap/cache public/uploads || true
 

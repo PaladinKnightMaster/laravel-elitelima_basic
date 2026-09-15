@@ -75,6 +75,11 @@ jobs:
       - name: Compile every Blade template
         run: php artisan view:cache
 
+      # Fails on duplicate route names, which otherwise only surface when
+      # someone tries to cache routes in production.
+      - name: Cache routes
+        run: php artisan route:cache
+
       - name: Tests
         run: php artisan test
 
