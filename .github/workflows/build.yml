@@ -89,23 +89,73 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Proves the runtime image actually builds: PHP 8.3 with gd, the Apache
-      # document root pointed at public/, and composer install against the lock.
       - name: Build image
         run: docker build -t elitelima:ci .
 
-      - name: Verify the extensions the app needs are present
+      # --entrypoint sh bypasses the runtime entrypoint. Going through it would
+      # make each check sit out the 2-minute wait for a database that is not
+      # running, and these assertions need nothing booted.
+      - name: Verify image contents
         run: |
           set -e
+          run() { docker run --rm --entrypoint sh elitelima:ci -c "$1"; }
+
           for ext in gd pdo_mysql mbstring fileinfo intl exif; do
-            docker run --rm elitelima:ci php -m | grep -qx "$ext"               || { echo "::error::missing PHP extension: $ext"; exit 1; }
-            echo "ok: $ext"
+            run "php -m" | grep -qx "$ext"               || { echo "::error::missing PHP extension: $ext"; exit 1; }
+            echo "ok: extension $ext"
           done
 
-      - name: Verify Apache serves from public/ and the app boots
+          run "test -f public/index.php"          && echo "ok: public/index.php"
+          run "test -f public/uploads/.htaccess"  && echo "ok: uploads .htaccess shipped"
+          run "test -f vendor/autoload.php"       && echo "ok: composer install ran"
+          run "php artisan --version"
+
+          # Apache resolves ${APACHE_DOCUMENT_ROOT} at runtime, so assert the
+          # variable is wired up rather than expecting an expanded path here.
+          run "grep -q 'DocumentRoot \${APACHE_DOCUMENT_ROOT}' /etc/apache2/sites-available/000-default.conf"
+          run "test \"\$APACHE_DOCUMENT_ROOT\" = /var/www/html/public"
+          echo "ok: document root points at public/"
+
+          run "grep -q 'AllowOverride All' /etc/apache2/conf-available/laravel.conf"
+          echo "ok: AllowOverride All, so .htaccess is honoured"
+
+      # The real test: the same `docker compose up` a developer or server runs.
+      - name: Boot the full stack and request a page
         run: |
           set -e
-          docker run --rm elitelima:ci sh -c 'php artisan --version'
-          docker run --rm elitelima:ci sh -c 'test -f public/index.php'
-          docker run --rm elitelima:ci sh -c 'test -f public/uploads/.htaccess'
-          docker run --rm elitelima:ci sh -c 'grep -q "DocumentRoot /var/www/html/public" /etc/apache2/sites-available/000-default.conf'
+          docker compose up -d --wait --wait-timeout 300 || {
+            docker compose logs --no-color | tail -60
+            exit 1
+          }
+
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /tmp/body -w '%{http_code}' http://localhost:8000/ || true)
+            case "$code" in
+              200|302) echo "ok: GET / returned $code"; break ;;
+            esac
+            [ "$i" = 30 ] && {
+              echo "::error::GET / never succeeded (last code: $code)"
+              tail -40 /tmp/body || true
+              docker compose logs --no-color | tail -60
+              exit 1
+            }
+            sleep 3
+          done
+
+          # A request for something executable under uploads must not run it.
+          docker compose exec -T app sh -c 'printf "<?php echo 42;" > public/uploads/probe.php'
+          probe=$(curl -s -o /tmp/probe -w '%{http_code}' http://localhost:8000/uploads/probe.php || true)
+          body=$(cat /tmp/probe || true)
+          if [ "$probe" = "200" ] && [ "$body" = "42" ]; then
+            echo "::error::uploads/.htaccess did not block PHP execution"
+            exit 1
+          fi
+          echo "ok: PHP under uploads/ is not executed (status $probe)"
+
+      - name: Compose logs on failure
+        if: failure()
+        run: docker compose logs --no-color | tail -100
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

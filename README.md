@@ -40,6 +40,15 @@ Uploads and database files live in named volumes (`uploads`, `dbdata`) so they
 survive `docker compose down`. Use `down -v` only when you genuinely want to
 discard them.
 
+One caveat with that volume: Docker seeds a named volume from the image only
+the first time it is created. If you already have an `uploads` volume from
+before `public/uploads/.htaccess` existed, the rule that stops PHP executing
+there will not appear in it on its own. Copy it in once:
+
+```bash
+docker compose cp public/uploads/.htaccess app:/var/www/html/public/uploads/.htaccess
+```
+
 Override any of `APP_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` through
 the environment or a local `.env`.
 
