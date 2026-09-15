@@ -74,12 +74,37 @@ class GirlImageUploadTest extends TestCase
         return $this->actingAs($admin, 'admin');
     }
 
+    /**
+     * girls has foreign keys onto cities, hair_colors and eye_colors, so those
+     * rows have to exist first.
+     *
+     * Attributes are assigned rather than mass-assigned: none of these models
+     * declare $fillable, so create() throws MassAssignmentException.
+     */
     private function lookups(): array
     {
-        $country = Country::create(['name' => 'Peru', 'slug' => 'peru']);
-        $city = City::create(['name' => 'Lima', 'slug' => 'lima', 'country_id' => $country->id]);
-        $hair = HairColor::create(['name' => 'Black', 'english' => 'Black', 'spanish' => 'Negro']);
-        $eye = EyeColor::create(['name' => 'Brown', 'english' => 'Brown', 'spanish' => 'Marron']);
+        $country = new Country();
+        $country->name = 'Peru';
+        $country->slug = 'peru';
+        $country->save();
+
+        $city = new City();
+        $city->name = 'Lima';
+        $city->slug = 'lima';
+        $city->country_id = $country->id;
+        $city->save();
+
+        $hair = new HairColor();
+        $hair->name = 'Black';
+        $hair->english = 'Black';
+        $hair->spanish = 'Negro';
+        $hair->save();
+
+        $eye = new EyeColor();
+        $eye->name = 'Brown';
+        $eye->english = 'Brown';
+        $eye->spanish = 'Marron';
+        $eye->save();
 
         return [$city->id, $hair->id, $eye->id];
     }
