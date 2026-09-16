@@ -157,10 +157,16 @@ no longer the case and should not be reintroduced.
 php artisan test
 ```
 
-Coverage is Laravel's default scaffolding only. CI (`.github/workflows/build.yml`)
-does the real checking: `composer validate`, `composer install`, `composer audit`,
-`migrate` against sqlite, compiling every Blade template, the test suite, and the
-asset build.
+The photo upload path is covered end to end: watermarking, the 300x300
+thumbnail, the filename hardening, and slug generation. Those tests need `gd`
+or `imagick` and skip without it, so they are effectively CI-only unless your
+local PHP has one.
+
+CI (`.github/workflows/build.yml`) goes further: `composer validate`,
+`composer install`, `composer audit`, `migrate`, compiling every Blade template,
+caching routes, the asset build and its reference check, building the Docker
+image, and booting the full stack to request a page and confirm a `.php` file
+under `uploads/` is served rather than executed.
 
 ## Upgrade notes
 
@@ -191,7 +197,20 @@ changing them:
       location ~ \.(php[3457]?|phar|phtml|pht|cgi|pl|py|sh)$ { deny all; }
   }
   ```
-- **Image handling is unverified since the upgrade** — Intervention Image was
-  migrated from v2 to v3 (`Image::make`→`read`, `resize`→`scale`,
-  `insert`→`place`, `fit`→`cover`), but no environment with `gd`/`imagick` has
-  exercised the upload path yet.
+- **365 asset references point at files that are not in the repository.** 359
+  of those come from the purchased theme's own stylesheets, referencing demo
+  images that were never shipped with it; they cannot be resolved without the
+  original theme package. Only **1** of the 382 originally found exists in the
+  cPanel backup, so these were broken in production too.
+
+  Six are referenced by the application's own templates and are worth knowing
+  about: `images/logo.png` (main theme header), `theme/css/video.css` and
+  `theme/js/video{,_f}.js` (the videos page), `register.html` (a dead link on
+  the admin login), and `uploads/placeholder.jpg` (runtime media, restored with
+  the rest of `uploads/`).
+
+  ```bash
+  node tools/check-assets.mjs --list
+  ```
+
+  CI holds the total at a budget of 365 so it cannot grow.

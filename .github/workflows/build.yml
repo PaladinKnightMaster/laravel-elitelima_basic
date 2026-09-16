@@ -31,6 +31,14 @@ jobs:
           node --check public/admin/js/user.js
           echo "both bundles parse"
 
+      # Budget, not a target. 359 of these are demo images referenced by the
+      # purchased theme's own stylesheets and were never shipped with it; they
+      # cannot be resolved without the original theme package. The budget stops
+      # the number growing, and `--list` separates the handful that the
+      # application's own templates reference from that vendored noise.
+      - name: Check asset references
+        run: node tools/check-assets.mjs --max 365
+
       - name: Confirm bundles were emitted
         run: |
           set -e
