@@ -2,16 +2,14 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     *
-     * @return void
-     */
+    // The homepage reads the settings table, so the schema has to exist.
+    use RefreshDatabase;
+
     public function testBasicTest()
     {
         $response = $this->get('/');
