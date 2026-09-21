@@ -12,7 +12,7 @@
         "intervention/image": "^3.11",
         "intervention/image-laravel": "^1.5",
         "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10",
+        "laravel/tinker": "^3.0",
         "laravel/ui": "^4.6",
         "rdx/laravelcollective-html": "^6.6"
     },
