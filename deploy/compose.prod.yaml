@@ -1,0 +1,52 @@
+# Production overlay. Use together with the base file:
+#
+#   docker compose -f compose.yaml -f deploy/compose.prod.yaml up -d
+#
+# Differences from the development stack:
+#   - Caddy terminates TLS; the app is not published directly.
+#   - MySQL has no published port; it is reachable only on the compose network.
+#   - Migrations do not run on boot. The production schema comes from the dump,
+#     which also carries the `videos` table that no migration creates.
+services:
+  app:
+    # Reached through Caddy only.
+    ports: !override []
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: "https://${SITE_DOMAIN:?set SITE_DOMAIN}"
+      APP_KEY: "${APP_KEY:?generate one with: php artisan key:generate --show}"
+      RUN_MIGRATIONS: "false"
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+      QUEUE_CONNECTION: sync
+      # Caddy is the only thing in front of the app, on the compose network.
+      TRUSTED_PROXIES: "*"
+    restart: always
+
+  db:
+    # Not published: nothing outside the compose network needs to reach MySQL.
+    ports: !override []
+    restart: always
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: "${SITE_DOMAIN:?set SITE_DOMAIN}"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - caddy_logs:/var/log/caddy
+    depends_on:
+      - app
+    restart: always
+
+volumes:
+  caddy_data:
+  caddy_config:
+  caddy_logs:

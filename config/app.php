@@ -163,6 +163,20 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Trusted Proxies
+    |--------------------------------------------------------------------------
+    |
+    | Proxies whose X-Forwarded-* headers may be believed. Empty means trust
+    | nothing, which is right when the app is reached directly. Set to "*" when
+    | it sits behind a reverse proxy that is the only way in, as in
+    | deploy/compose.prod.yaml, where Caddy is the sole published service.
+    |
+    */
+
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
     'providers' => ServiceProvider::defaultProviders()->merge([
         // Package Service Providers...
     ])->merge([
