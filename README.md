@@ -93,19 +93,30 @@ every page, so an empty database will error rather than render defaults.
 
 ## Deployment
 
-`docker compose up -d` on any host with Docker is the whole deployment. The
-image builds the dependencies in, and the entrypoint handles key generation,
-waiting for the database and warming the view and route caches.
+See **[deploy/README.md](deploy/README.md)** for the full walkthrough: preparing
+a host, TLS via Caddy, and restoring the database and media from the cPanel
+backup.
+
+The short version, on any host with Docker:
+
+```bash
+sudo ./deploy/bootstrap-host.sh
+cp deploy/.env.production.example .env   # set SITE_DOMAIN, APP_KEY, DB_PASSWORD
+docker compose -f compose.yaml -f deploy/compose.prod.yaml up -d --build
+./deploy/restore-database.sh  /path/to/backup/Database/y00v9c45_elitedb.sql
+./deploy/restore-media.sh     /path/to/backup/public_html/laravel-elitelima/uploads
+```
 
 Two things the host must provide:
 
 - **Persistent storage for `public/uploads/`.** Production media is around
-  607 MB; an ephemeral container filesystem will lose it on every restart.
+  607 MB; an ephemeral container filesystem loses it on every restart.
 - **A MySQL database.** Either the compose `db` service with a volume, or a
   managed instance with `DB_HOST` pointed at it.
 
-Put a reverse proxy in front for TLS. On nginx, mirror the uploads rule from
-[Known issues](#known-issues), since nginx does not read `.htaccess`.
+The production overlay puts Caddy in front for TLS. If you use nginx instead,
+mirror the uploads rule from [Known issues](#known-issues) — nginx does not read
+`.htaccess`.
 
 ## Assets
 
