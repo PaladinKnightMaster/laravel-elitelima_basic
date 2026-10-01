@@ -73,3 +73,10 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+    # Every action lives in the one workflow file, so ungrouped bumps arrive as
+    # separate PRs that all edit build.yml and therefore conflict with each
+    # other as soon as the first one merges. One PR per run instead.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
