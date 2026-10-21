@@ -114,19 +114,45 @@ class HomeController extends Controller
         return view('themes.main-theme.spanish.sitemap',['title' => 'Sitemap','settings'=>$settings,'girls'=>$girls,]);
     }
 
-    public function searchGirls(Request $request)
+    /**
+     * Run the public search form and return the matching active models.
+     *
+     * The filters (hair colour, age band, breast, height band) are OR'd
+     * together: a model matches if she satisfies any one of them. That is how
+     * the form has always behaved and is preserved here.
+     *
+     * What they must not be able to do is escape the status filter. They used
+     * to, because the orWhere clauses sat at the top level beside
+     * `status = 1` instead of inside a group. SQL binds AND tighter than OR, so
+     * the query meant "(status = 1 AND hair) OR age OR breast OR height", and
+     * any inactive model that matched on age, breast or height was returned to
+     * the public.
+     */
+    private function searchActiveGirls(Request $request)
     {
         $hair = $request->input("hair");
-        $height = $request->input("height");
         $breast = $request->input("breast");
-        $age = $request->input("age");
-        $data = explode('_', $age);
-        $HGT = explode('_', $height);
-        $hgt1 = isset($HGT[0])? $HGT[0]:"";
-        $hgt2 = isset($HGT[1])? $HGT[1]:"";
-        $age1 = isset($data[0])? $data[0]:"";
-        $age2 = isset($data[1])? $data[1]:"";
-        $girls = Girl::where('status',1)->where('hair_color',$hair)->orwhereBetween('age',array($age1,$age2))->orwhere('breast',$breast)->orwhereBetween('height',array($hgt1,$hgt2))->get();
+        $age = explode('_', (string) $request->input("age"));
+        $height = explode('_', (string) $request->input("height"));
+
+        $age1 = $age[0] ?? "";
+        $age2 = $age[1] ?? "";
+        $hgt1 = $height[0] ?? "";
+        $hgt2 = $height[1] ?? "";
+
+        return Girl::where('status', 1)
+            ->where(function ($query) use ($hair, $breast, $age1, $age2, $hgt1, $hgt2) {
+                $query->where('hair_color', $hair)
+                    ->orWhereBetween('age', array($age1, $age2))
+                    ->orWhere('breast', $breast)
+                    ->orWhereBetween('height', array($hgt1, $hgt2));
+            })
+            ->get();
+    }
+
+    public function searchGirls(Request $request)
+    {
+        $girls = $this->searchActiveGirls($request);
         $hairs = HairColor::all();
         $eyes = EyeColor::all();
         $settings = Setting::pluck('value','name')->toArray();
@@ -134,17 +160,7 @@ class HomeController extends Controller
     }
     public function searchGirlsEs(Request $request)
     {
-        $hair = $request->input("hair");
-        $height = $request->input("height");
-        $breast = $request->input("breast");
-        $age = $request->input("age");
-        $data = explode('_', $age);
-        $HGT = explode('_', $height);
-        $hgt1 = isset($HGT[0])? $HGT[0]:"";
-        $hgt2 = isset($HGT[1])? $HGT[1]:"";
-        $age1 = isset($data[0])? $data[0]:"";
-        $age2 = isset($data[1])? $data[1]:"";
-        $girls = Girl::where('status',1)->where('hair_color',$hair)->orwhereBetween('age',array($age1,$age2))->orwhere('breast',$breast)->orwhereBetween('height',array($hgt1,$hgt2))->get();
+        $girls = $this->searchActiveGirls($request);
         $hairs = HairColor::all();
         $eyes = EyeColor::all();
         $settings = Setting::pluck('value','name')->toArray();
@@ -242,6 +258,8 @@ class HomeController extends Controller
     {
         //
     }
+
+
 
     public function processContact(Request $request){
         $this->validate($request, [
