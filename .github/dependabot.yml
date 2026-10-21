@@ -50,16 +50,22 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
-      composer-patches:
+      # Minor as well as patch. Laravel ships fixes in minor releases:
+      # 12.69 -> 12.70 carried security hardening, and a patch-only group
+      # never proposed it (Dependabot's PR for 12.69.3 closed itself as "no
+      # longer updatable" once 12.70.x existed). None of the direct
+      # dependencies are 0.x, so a minor here is an ordinary semver minor.
+      composer-minor-and-patch:
         applies-to: version-updates
         patterns:
           - "*"
         update-types:
+          - "minor"
           - "patch"
     ignore:
-      # The app is on Laravel 6.x with php ^7.1.3. Major bumps proposed by the
-      # bot cannot install and would only create noise; the framework upgrade
-      # is a tracked project, not a dependency bump.
+      # Majors stay out of the bot's hands. A new Laravel major is a planned
+      # upgrade with its own PR, and symfony/* majors are pinned by whichever
+      # Laravel release is installed.
       - dependency-name: "laravel/framework"
         update-types: ["version-update:semver-major"]
       - dependency-name: "symfony/*"
