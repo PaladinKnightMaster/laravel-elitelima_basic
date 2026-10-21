@@ -261,53 +261,6 @@ class HomeController extends Controller
 
 
 
-    public function processContact(Request $request){
-        $this->validate($request, [
-            'name' => 'required',
-            'email' => 'required',
-            'subject' => 'required',
-            'message' => 'required',
-            'g-recaptcha-response' => 'required',
-            'g-recaptcha-response.required' => 'Check the ReCaptcha',
-        ]);
-
-//dd("working");
-
-        $settings = Setting::pluck('value','name')->toArray();
-        if(isset($settings['enquiry_email'])) {
-            $enquiry_email = $settings['enquiry_email'];
-        }else {
-            $enquiry_email = "support@ideal.org.pk";
-        }
-        if(isset($settings['secret_key'])) {
-            $secret_key = $settings['secret_key'];
-        }else {
-            $secret_key = "6LdoXpIUAAAAAIxbg_1LcghcCLK4QyQJrg3CtVW0";
-        }
-
-        $input = $request->all();
-        $input = array_map('strip_tags', $input);
-        $captcha = $input['g-recaptcha-response'];
-        $response=json_decode(file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$secret_key&response=".$captcha."&remoteip=".$_SERVER['REMOTE_ADDR']), true);
-
-        $data = array(
-            'name' => $input['name'],
-            'email' => $input['email'],
-            'check_email' => isset($input['emailupdates']) ?"Yes":"No" ,
-            'subject' => $input['subject'],
-            'msg' => $input['message'],
-            'admin_email' => $enquiry_email,
-        );
-        Mail::send('theme.email.contact', $data, function ($message) use ($data) {
-            $message->to($data['admin_email'],'')
-                ->subject('Contact');
-        });
-        Session::flash('success_message', 'Success! We received contact us enquiry successfully!');
-        return redirect()->back();
-
-    }
-
-
     /**
      * Update the specified resource in storage.
      *
