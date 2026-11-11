@@ -114,19 +114,45 @@ class HomeController extends Controller
         return view('themes.main-theme.spanish.sitemap',['title' => 'Sitemap','settings'=>$settings,'girls'=>$girls,]);
     }
 
-    public function searchGirls(Request $request)
+    /**
+     * Run the public search form and return the matching active models.
+     *
+     * The filters (hair colour, age band, breast, height band) are OR'd
+     * together: a model matches if she satisfies any one of them. That is how
+     * the form has always behaved and is preserved here.
+     *
+     * What they must not be able to do is escape the status filter. They used
+     * to, because the orWhere clauses sat at the top level beside
+     * `status = 1` instead of inside a group. SQL binds AND tighter than OR, so
+     * the query meant "(status = 1 AND hair) OR age OR breast OR height", and
+     * any inactive model that matched on age, breast or height was returned to
+     * the public.
+     */
+    private function searchActiveGirls(Request $request)
     {
         $hair = $request->input("hair");
-        $height = $request->input("height");
         $breast = $request->input("breast");
-        $age = $request->input("age");
-        $data = explode('_', $age);
-        $HGT = explode('_', $height);
-        $hgt1 = isset($HGT[0])? $HGT[0]:"";
-        $hgt2 = isset($HGT[1])? $HGT[1]:"";
-        $age1 = isset($data[0])? $data[0]:"";
-        $age2 = isset($data[1])? $data[1]:"";
-        $girls = Girl::where('status',1)->where('hair_color',$hair)->orwhereBetween('age',array($age1,$age2))->orwhere('breast',$breast)->orwhereBetween('height',array($hgt1,$hgt2))->get();
+        $age = explode('_', (string) $request->input("age"));
+        $height = explode('_', (string) $request->input("height"));
+
+        $age1 = $age[0] ?? "";
+        $age2 = $age[1] ?? "";
+        $hgt1 = $height[0] ?? "";
+        $hgt2 = $height[1] ?? "";
+
+        return Girl::where('status', 1)
+            ->where(function ($query) use ($hair, $breast, $age1, $age2, $hgt1, $hgt2) {
+                $query->where('hair_color', $hair)
+                    ->orWhereBetween('age', array($age1, $age2))
+                    ->orWhere('breast', $breast)
+                    ->orWhereBetween('height', array($hgt1, $hgt2));
+            })
+            ->get();
+    }
+
+    public function searchGirls(Request $request)
+    {
+        $girls = $this->searchActiveGirls($request);
         $hairs = HairColor::all();
         $eyes = EyeColor::all();
         $settings = Setting::pluck('value','name')->toArray();
@@ -134,17 +160,7 @@ class HomeController extends Controller
     }
     public function searchGirlsEs(Request $request)
     {
-        $hair = $request->input("hair");
-        $height = $request->input("height");
-        $breast = $request->input("breast");
-        $age = $request->input("age");
-        $data = explode('_', $age);
-        $HGT = explode('_', $height);
-        $hgt1 = isset($HGT[0])? $HGT[0]:"";
-        $hgt2 = isset($HGT[1])? $HGT[1]:"";
-        $age1 = isset($data[0])? $data[0]:"";
-        $age2 = isset($data[1])? $data[1]:"";
-        $girls = Girl::where('status',1)->where('hair_color',$hair)->orwhereBetween('age',array($age1,$age2))->orwhere('breast',$breast)->orwhereBetween('height',array($hgt1,$hgt2))->get();
+        $girls = $this->searchActiveGirls($request);
         $hairs = HairColor::all();
         $eyes = EyeColor::all();
         $settings = Setting::pluck('value','name')->toArray();
@@ -243,51 +259,6 @@ class HomeController extends Controller
         //
     }
 
-    public function processContact(Request $request){
-        $this->validate($request, [
-            'name' => 'required',
-            'email' => 'required',
-            'subject' => 'required',
-            'message' => 'required',
-            'g-recaptcha-response' => 'required',
-            'g-recaptcha-response.required' => 'Check the ReCaptcha',
-        ]);
-
-//dd("working");
-
-        $settings = Setting::pluck('value','name')->toArray();
-        if(isset($settings['enquiry_email'])) {
-            $enquiry_email = $settings['enquiry_email'];
-        }else {
-            $enquiry_email = "support@ideal.org.pk";
-        }
-        if(isset($settings['secret_key'])) {
-            $secret_key = $settings['secret_key'];
-        }else {
-            $secret_key = "6LdoXpIUAAAAAIxbg_1LcghcCLK4QyQJrg3CtVW0";
-        }
-
-        $input = $request->all();
-        $input = array_map('strip_tags', $input);
-        $captcha = $input['g-recaptcha-response'];
-        $response=json_decode(file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$secret_key&response=".$captcha."&remoteip=".$_SERVER['REMOTE_ADDR']), true);
-
-        $data = array(
-            'name' => $input['name'],
-            'email' => $input['email'],
-            'check_email' => isset($input['emailupdates']) ?"Yes":"No" ,
-            'subject' => $input['subject'],
-            'msg' => $input['message'],
-            'admin_email' => $enquiry_email,
-        );
-        Mail::send('theme.email.contact', $data, function ($message) use ($data) {
-            $message->to($data['admin_email'],'')
-                ->subject('Contact');
-        });
-        Session::flash('success_message', 'Success! We received contact us enquiry successfully!');
-        return redirect()->back();
-
-    }
 
 
     /**

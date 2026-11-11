@@ -342,7 +342,7 @@
 										<td class="content-cell" style="background: #fff; border-radius: 2px; padding: 32px;">
 											<p style="font-size: 18px;">
 											    You are receiving this email because we received a password reset request for your account.<br>
-											    Click <a href="https://www.elitelima.com/admin/{{$data['link']}}" target="_blank" style="">Here</a> to proceed further.<br>
+											    Click <a href="{{ $data['link'] }}" target="_blank" style="">Here</a> to proceed further.<br>
 												If you did not request a password reset, no further action is required.
 											</p>
 										</td>
