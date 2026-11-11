@@ -116,9 +116,15 @@ docker compose exec app php artisan about           # environment and driver sum
 Then check by hand:
 
 - the homepage lists models with photographs
-- `/models-hostess` and `/videos` render
+- `/models-hostess/es` renders (use the Spanish URL, see the note below)
 - `/admin/login` accepts one of the two restored admin accounts
 - uploading a photo produces a thumbnail under `uploads/girls/thumbs/`
+
+> **Known issue: the English pages return 500.** The shared nav links to the
+> routes `boys` and `casting`, which are not defined, so every English page
+> fails with `Route [boys] not defined`. The Spanish pages (`/es` URLs) and the
+> admin are unaffected. Do not treat English 500s as a failed deploy until the
+> nav is fixed.
 
 And confirm the uploads guard is live — this must **not** return `42`:
 
