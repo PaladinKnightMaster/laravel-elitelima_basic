@@ -1,0 +1,57 @@
+name: dependabot-automerge
+
+# Lets Dependabot's own pull requests land without a human, but only after the
+# whole `build` workflow (php, npm, docker) has finished green for that exact
+# commit. Main has no required-status-check rule, so `gh pr merge --auto` would
+# merge at once; waiting for the build's own completion is what gates this.
+#
+# This job never checks out or runs PR code. It only reads the build result and
+# calls the merge API, so the write token is not exposed to the PR's contents.
+#
+# Majors never reach this point for composer/npm: dependabot.yml ignores them.
+# GitHub Actions bumps can be majors and are merged on the same terms, since
+# the build exercises every action it uses.
+
+on:
+  workflow_run:
+    workflows: [build]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    name: automerge
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]'
+    steps:
+      - name: Merge the PR this build ran for
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No pull request attached to this run; nothing to merge."; exit 0
+          fi
+
+          read -r author state head base < <(gh pr view "$PR_NUMBER" --repo "$REPO" \
+            --json author,state,headRefOid,baseRefName \
+            --jq '[.author.login, .state, .headRefOid, .baseRefName] | @tsv')
+
+          [ "$author" = "app/dependabot" ] || [ "$author" = "dependabot[bot]" ] || \
+            { echo "PR #$PR_NUMBER is by $author, not Dependabot; leaving it."; exit 0; }
+          [ "$state" = "OPEN" ] || { echo "PR #$PR_NUMBER is $state."; exit 0; }
+          [ "$base" = "main" ] || { echo "PR #$PR_NUMBER targets $base."; exit 0; }
+          # A newer push (e.g. a Dependabot rebase) means this green build is
+          # for a commit that is no longer the PR head.
+          [ "$head" = "$RUN_SHA" ] || { echo "Build was for $RUN_SHA but head is $head; waiting for its own build."; exit 0; }
+
+          gh pr merge "$PR_NUMBER" --repo "$REPO" --merge --delete-branch --match-head-commit "$RUN_SHA"
